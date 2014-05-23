@@ -99,13 +99,13 @@ Use `pip` to install `noccn` in a virtualenv::
   #!shell
   virtualenv noccn --system-site-packages
   cd noccn
-  bin/pip install path/to/noccn
+  pip install path/to/noccn
 
 If you're on Debian or Ubuntu, you can install the required numpy and
 scipy like this::
 
   #!shell
-   apt-get install python-numpy python-scipy
+  apt-get install python-numpy python-scipy
 
 Scripts
 -------
@@ -117,6 +117,10 @@ that noccn itself adds are `ccn-predict` and `ccn-make-batches`.
 Some scripts require that you point them to a model snapshot or a
 snapshot directory, using the `-f` argument.
 
+Be sure to specify the location of the cuda-convnet repository.
+
+  export CUDA_CONVNET=$VIRTUAL_ENV/opt/cuda-convnet
+
 ccn-train
 ~~~~~~~~~
 
@@ -124,7 +128,7 @@ Using `ccn-train` is simple; just pass the path to the `options.cfg`
 file as defined above::
 
   #!shell
-  bin/ccn-train models/01/options.cfg
+  ccn-train models/01/options.cfg
 
 noccn's train script will only save a snapshot if there was an
 improvement in the test score.  If you want to store snapshots
@@ -144,7 +148,7 @@ random test samples and their predictions, and at the activations of
 the first layer in your network using the `ccn-show` script::
 
   #!shell
-  bin/ccn-show models/01/options.cfg -f models/01/tmp/ConvNet__*/
+  ccn-show models/01/options.cfg -f models/01/tmp/ConvNet__*/
 
 If you want to view a different convolutional layer, pass
 e.g. `--show-filters=conv2`.
@@ -157,7 +161,7 @@ confusion matrix.  This gives you numbers to evaluate your network's
 performance::
 
   #!shell
-  bin/ccn-predict models/01/options.cfg -f models/01/tmp/ConvNet__*/
+  ccn-predict models/01/options.cfg -f models/01/tmp/ConvNet__*/
 
 ccn-make-batches
 ~~~~~~~~~~~~~~~~
@@ -176,4 +180,4 @@ different `creator` (default: `noccn.dataset.BatchCreator`).
 An example::
 
   #!shell
-  bin/ccn-make-batches models/01/options.cfg
+  ccn-make-batches models/01/options.cfg
