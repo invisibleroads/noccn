@@ -106,9 +106,13 @@ class PredictConvNet(convnet.ConvNet):
         y_pred_probas = y_pred_probas[:, 1]
         y_true = y_true.reshape(-1)
 
-        if 2 == len(set(y_pred + y_true)):
+        try:
+            score = roc_auc_score(y_true, y_pred_probas)
+        except ValueError:
+            pass
+        else:
             print
-            print "AUC score:", roc_auc_score(y_true, y_pred_probas)
+            print "AUC score:", score
             print "AUC score (binary):", roc_auc_score(y_true, y_pred)
             print
 
