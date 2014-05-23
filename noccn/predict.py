@@ -1,7 +1,8 @@
 import csv
-from multiprocessing import Process
 import sys
 import time
+from itertools import izip
+from multiprocessing import Process
 
 import numpy as np
 
@@ -44,8 +45,6 @@ class PredictConvNet(convnet.ConvNet):
     _predictions = None
     _option_parser = None
 
-    csv_fieldnames = ''
-
     def make_predictions(self):
         if self._predictions is not None:
             return self._predictions
@@ -81,32 +80,37 @@ class PredictConvNet(convnet.ConvNet):
 
         fieldnames = [
             str(i) for i in range(self.test_data_provider.get_num_classes())]
-        fieldnames_extra = (self.csv_fieldnames or 'name').split(',')
-        fieldnames += fieldnames_extra
+        try:
+            fieldnames += md[0].keys()
+        except IndexError:
+            pass
 
         with open(self.op_write_predictions_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            for pred, label, m in zip(preds, labels, md):
-                record = dict(zip([str(i) for i in range(len(pred))], pred))
-                record.update(m)
+            writer.writeheader()
+            for index, (pred, label) in enumerate(izip(preds, labels)):
+                record = dict(izip([str(i) for i in range(len(pred))], pred))
+                try:
+                    record.update(md[index])
+                except IndexError:
+                    pass
                 writer.writerow(record)
 
     def report(self):
-        from sklearn.metrics import auc_score
+        from sklearn.metrics import roc_auc_score
         from sklearn.metrics import classification_report
         from sklearn.metrics import confusion_matrix
-        from sklearn.metrics import f1_score
-        from sklearn.metrics import precision_recall_curve
 
         y_pred_probas, y_true, md = self.make_predictions()
         y_pred = y_pred_probas.argmax(1)
         y_pred_probas = y_pred_probas[:, 1]
         y_true = y_true.reshape(-1)
 
-        print
-        print "AUC score:", auc_score(y_true, y_pred_probas)
-        print "AUC score (binary):", auc_score(y_true, y_pred)
-        print
+        if 2 == len(set(y_pred + y_true)):
+            print
+            print "AUC score:", roc_auc_score(y_true, y_pred_probas)
+            print "AUC score (binary):", roc_auc_score(y_true, y_pred)
+            print
 
         print "Classification report:"
         print classification_report(y_true, y_pred)
