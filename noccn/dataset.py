@@ -17,7 +17,7 @@ from noccn.script import resolve
 
 
 N_JOBS = -1
-SIZE = (64, 64)
+SIZE = (32, 32)
 
 
 def _process_item(creator, name):
