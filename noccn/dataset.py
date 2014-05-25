@@ -160,7 +160,7 @@ def console():
     create = creator(
         batch_size=int(cfg.get('batch-size', 1000)),
         channels=int(cfg.get('channels', 3)),
-        size=eval(cfg.get('size', '(64, 64)')),
+        size=eval(cfg.get('size', '(32, 32)')),
         output_path=cfg.get('output-path', '/tmp/noccn-dataset'),
         )
     create(filenames_and_labels)
