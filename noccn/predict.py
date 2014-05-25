@@ -50,12 +50,12 @@ class PredictConvNet(convnet.ConvNet):
             return self._predictions
 
         num_classes = self.test_data_provider.get_num_classes()
+        num_batches = len(self.test_data_provider.batch_range)
         all_preds = np.zeros((0, num_classes), dtype=np.single)
         all_labels = np.zeros((0, 1), dtype=np.single)
-        all_metadata = []
-        num_batches = len(self.test_data_provider.batch_range)
-        db = self.test_data_provider.batch_meta.get('metadata', {})
+        all_packs = []
 
+        packs = self.test_data_provider.batch_meta.get('packs', [])
         for batch_index in range(num_batches):
             epoch, batchnum, (data, labels) = self.get_next_batch(train=False)
             if data.shape[1] != labels.shape[1]:
@@ -63,35 +63,32 @@ class PredictConvNet(convnet.ConvNet):
             preds, labels = make_predictions(self, data, labels, num_classes)
             all_preds = np.vstack([all_preds, preds])
             all_labels = np.vstack([all_labels, labels.T])
-            if db:
+            if packs:
                 ids = self.test_data_provider.get_batch(batchnum).get('ids')
-                all_metadata.extend([db[id] for id in ids])
+                all_packs.extend(packs[_] for _ in ids)
 
-        self._predictions = all_preds, all_labels, all_metadata
+        self._predictions = all_preds, all_labels, all_packs
         return self._predictions
 
     def write_predictions(self):
-        preds, labels, md = self.make_predictions()
+        preds, labels, packs = self.make_predictions()
         preds = preds.reshape(preds.shape[0], -1)
-
         print "Predicted true: %.4f" % (
             np.where(preds > preds.max() / 2)[0].shape[0] /
             float(preds.shape[0]))
 
-        fieldnames = [
-            str(i) for i in range(self.test_data_provider.get_num_classes())]
-        try:
-            fieldnames += md[0].keys()
-        except IndexError:
-            pass
+        pack_columns = self.test_data_provider.batch_meta.get(
+            'pack_columns', [])
+        fieldnames = range(self.test_data_provider.get_num_classes())
+        fieldnames += pack_columns
 
         with open(self.op_write_predictions_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for index, (pred, label) in enumerate(izip(preds, labels)):
-                record = dict(izip([str(i) for i in range(len(pred))], pred))
+                record = dict(izip(xrange(len(pred)), pred))
                 try:
-                    record.update(md[index])
+                    record.update(dict(izip(pack_columns, packs[index])))
                 except IndexError:
                     pass
                 writer.writerow(record)
@@ -101,7 +98,7 @@ class PredictConvNet(convnet.ConvNet):
         from sklearn.metrics import classification_report
         from sklearn.metrics import confusion_matrix
 
-        y_pred_probas, y_true, md = self.make_predictions()
+        y_pred_probas, y_true = self.make_predictions()[:2]
         y_pred = y_pred_probas.argmax(1)
         y_pred_probas = y_pred_probas[:, 1]
         y_true = y_true.reshape(-1)

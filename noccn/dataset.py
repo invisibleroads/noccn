@@ -1,6 +1,5 @@
 import cPickle
 from fnmatch import fnmatch
-import operator
 import os
 import random
 import sys
@@ -70,9 +69,10 @@ class BatchCreator(object):
                   for name, label in names_and_labels]
         ids = [id for (id, fname) in ids_and_names]
         data = self.preprocess_data(data)
+        data_mean = data.mean(axis=0)
 
         for batch_start in range(0, len(names_and_labels), batch_size):
-            batch = {'data': None, 'labels': [], 'metadata': []}
+            batch = {'data': None, 'labels': []}
             batch_end = batch_start + batch_size
 
             batch['data'] = data[batch_start:batch_end, :].T
@@ -89,9 +89,11 @@ class BatchCreator(object):
 
         batches_meta = {}
         batches_meta['label_names'] = labels_sorted
-        batches_meta['metadata'] = dict(
-            (id, {'name': name}) for (id, name) in ids_and_names)
-        batches_meta['data_mean'] = data.mean(axis=0)
+        batches_meta['pack_columns'] = ['name']
+        batches_meta['packs'] = [
+            (os.path.basename(name),) for id, name in ids_and_names]
+        batches_meta['data_mean'] = data_mean.reshape(data_mean.shape[0], 1)
+        batches_meta['num_vis'] = data.shape[0]
         batches_meta.update(self.more_meta)
 
         with open(os.path.join(self.output_path, 'batches.meta'), 'wb') as f:
@@ -110,7 +112,7 @@ class BatchCreator(object):
         """
         im = ImageOps.fit(im, self.size, Image.ANTIALIAS)
         im_data = np.array(im)
-        im_data = im_data.T.reshape(self.channels, -1).reshape(-1)
+        im_data = im_data.T.swapaxes(1, 2).reshape(-1)
         im_data = im_data.astype(np.single)
         return im_data
 
