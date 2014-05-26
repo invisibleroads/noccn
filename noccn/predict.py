@@ -87,7 +87,7 @@ class PredictConvNet(convnet.ConvNet):
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for index, (pred, label) in enumerate(izip(preds, labels)):
-                record = dict(label=label)
+                record = dict(label=label[0])
                 record.update(dict(izip(xrange(len(pred)), pred)))
                 try:
                     record.update(dict(izip(pack_columns, packs[index])))
