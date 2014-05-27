@@ -79,16 +79,14 @@ class PredictConvNet(convnet.ConvNet):
 
         pack_columns = self.test_data_provider.batch_meta.get(
             'pack_columns', [])
-        fieldnames = ['label']
-        fieldnames += range(self.test_data_provider.get_num_classes())
+        fieldnames = range(self.test_data_provider.get_num_classes())
         fieldnames += pack_columns
 
         with open(self.op_write_predictions_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-            for index, (pred, label) in enumerate(izip(preds, labels)):
-                record = dict(label=label)
-                record.update(dict(izip(xrange(len(pred)), pred)))
+            for index, pred in enumerate(preds):
+                record = dict(izip(xrange(len(pred)), pred))
                 try:
                     record.update(dict(izip(pack_columns, packs[index])))
                 except IndexError:
