@@ -9,7 +9,7 @@ def add_path():
 add_path()
 
 
-import convnet_ as convnet
+import convnet
 import data
 import gpumodel
 import options
